@@ -3,7 +3,7 @@
 
 My Richfield Pharmacy is management system connected to a MySQL database . It allows Authorised Admin and Cashier Users to log in and once they are logged in. They have access to view pharmacy stock and allow Admin to add medicine . The system stores medicine ,users, supplier and sales information in a structured database. This system will help medical staff be able to add and change medication with relative ease.
 
-# Data that is used and Captured#
+# Data that is used and Captured #
 ## Database Login
 
 | Detail | Value |
