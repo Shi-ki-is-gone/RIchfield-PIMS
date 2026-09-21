@@ -31,7 +31,11 @@ public class Main {
                 dashboard.setVisible(true);
                 return true;
             }
-            JOptionPane.showMessageDialog(null, "Incorrect username or password.");
+            JOptionPane.showMessageDialog(null,
+                "Incorrect username or password.\n\n" +
+                "If you forgot your login details, use the credentials shown on the login screen " +
+                "or contact the system administrator.",
+                "Login Failed", JOptionPane.WARNING_MESSAGE);
         } catch (SQLException e) {
             showDatabaseError(e);
         }
