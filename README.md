@@ -22,4 +22,6 @@ https://www.flaticon.com/free-icon/user_9187532
 
 *Copilot used to split project and fix errors*
 https://github.com/features/copilot
+
+MySQL used
 https://dev.mysql.com/downloads/
