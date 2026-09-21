@@ -6,6 +6,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JPasswordField;
 import javax.swing.table.DefaultTableModel;
@@ -191,9 +192,66 @@ public class DashboardFrame extends JFrame {
     }
 
     private void reportDialog() {
-        String sql = "SELECT COUNT(*) AS medicines, COALESCE(SUM(quantity_in_stock),0) AS stock, (SELECT COUNT(*) FROM suppliers) AS suppliers, (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM sales) AS sales FROM medicines";
-        try (Connection connection = Database.connect(); Statement statement = connection.createStatement(); ResultSet result = statement.executeQuery(sql)) {
-            if (result.next()) JOptionPane.showMessageDialog(this, "ADMIN REPORT\n\nMedicines: " + result.getInt("medicines") + "\nItems in stock: " + result.getInt("stock") + "\nSuppliers: " + result.getInt("suppliers") + "\nUsers: " + result.getInt("users") + "\nSales: " + result.getInt("sales"));
+        String summarySql = "SELECT COUNT(*) AS medicines, COALESCE(SUM(quantity_in_stock),0) AS stock, " +
+            "(SELECT COUNT(*) FROM suppliers) AS suppliers, (SELECT COUNT(*) FROM users) AS users, " +
+            "(SELECT COUNT(*) FROM sales) AS sales, (SELECT COALESCE(SUM(total_amount),0) FROM sales) AS revenue FROM medicines";
+        String topSalesSql = "SELECT m.name, SUM(i.quantity_sold) AS quantity, " +
+            "SUM(i.quantity_sold * i.price_at_sale) AS revenue FROM sale_items i " +
+            "JOIN medicines m ON m.medicine_id=i.medicine_id GROUP BY m.medicine_id,m.name " +
+            "ORDER BY quantity DESC LIMIT 10";
+        String lowStockSql = "SELECT name,quantity_in_stock,reorder_level FROM medicines " +
+            "WHERE quantity_in_stock <= reorder_level ORDER BY quantity_in_stock";
+        String expirySql = "SELECT name,expiry_date FROM medicines WHERE expiry_date IS NOT NULL " +
+            "AND expiry_date <= DATE_ADD(CURDATE(), INTERVAL 90 DAY) ORDER BY expiry_date";
+
+        StringBuilder report = new StringBuilder("RICHFIELD PHARMACY - ADMIN REPORT\n\n");
+        try (Connection connection = Database.connect(); Statement statement = connection.createStatement()) {
+            try (ResultSet result = statement.executeQuery(summarySql)) {
+                if (result.next()) {
+                    report.append("SUMMARY\n");
+                    report.append("Medicines: ").append(result.getInt("medicines"))
+                        .append(" | Items in stock: ").append(result.getInt("stock")).append("\n");
+                    report.append("Suppliers: ").append(result.getInt("suppliers"))
+                        .append(" | Users: ").append(result.getInt("users")).append("\n");
+                    report.append("Completed sales: ").append(result.getInt("sales"))
+                        .append(" | Revenue: R").append(String.format("%.2f", result.getDouble("revenue"))).append("\n\n");
+                }
+            }
+
+            report.append("TOP-SELLING MEDICINES\n");
+            try (ResultSet result = statement.executeQuery(topSalesSql)) {
+                if (!result.next()) report.append("No sales recorded.\n");
+                else do {
+                    report.append(result.getString("name")).append(" | Quantity sold: ")
+                        .append(result.getInt("quantity")).append(" | Revenue: R")
+                        .append(String.format("%.2f", result.getDouble("revenue"))).append("\n");
+                } while (result.next());
+            }
+
+            report.append("\nLOW-STOCK MEDICINES\n");
+            try (ResultSet result = statement.executeQuery(lowStockSql)) {
+                if (!result.next()) report.append("No medicines are below their reorder level.\n");
+                else do {
+                    report.append(result.getString("name")).append(" | Stock: ")
+                        .append(result.getInt("quantity_in_stock")).append(" | Reorder level: ")
+                        .append(result.getInt("reorder_level")).append("\n");
+                } while (result.next());
+            }
+
+            report.append("\nEXPIRED OR EXPIRING WITHIN 90 DAYS\n");
+            try (ResultSet result = statement.executeQuery(expirySql)) {
+                if (!result.next()) report.append("No expired or soon-to-expire medicines found.\n");
+                else do {
+                    report.append(result.getString("name")).append(" | Expiry date: ")
+                        .append(result.getDate("expiry_date")).append("\n");
+                } while (result.next());
+            }
+
+            JTextArea output = new JTextArea(report.toString(), 22, 70);
+            output.setEditable(false);
+            output.setLineWrap(true);
+            output.setWrapStyleWord(true);
+            JOptionPane.showMessageDialog(this, new JScrollPane(output), "Detailed Reports", JOptionPane.INFORMATION_MESSAGE);
         } catch (SQLException e) { Database.showDatabaseError(e); }
     }
 
