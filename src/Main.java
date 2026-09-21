@@ -70,6 +70,97 @@ public class Main {
         }
     }
 
+    static void updateMedicine(int id, String name, String company, String type,
+                               double price, int qty, int reorder, String expiry) {
+        String sql = "UPDATE medicines SET name=?,company=?,medicine_type=?,price=?,quantity_in_stock=?,reorder_level=?,expiry_date=? WHERE medicine_id=?";
+        try (Connection c = connect(); PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, name); p.setString(2, company); p.setString(3, type);
+            p.setDouble(4, price); p.setInt(5, qty); p.setInt(6, reorder);
+            p.setDate(7, Date.valueOf(expiry)); p.setInt(8, id);
+            p.executeUpdate();
+        } catch (SQLException e) {
+            showDatabaseError(e);
+        }
+    }
+
+    static void deleteMedicine(int id) {
+        String sql = "DELETE FROM medicines WHERE medicine_id=?";
+        try (Connection c = connect(); PreparedStatement p = c.prepareStatement(sql)) {
+            p.setInt(1, id);
+            p.executeUpdate();
+        } catch (SQLException e) {
+            showDatabaseError(e);
+        }
+    }
+
+    static void addSupplier(String name, String contact, String phone, String email, String address) {
+        String sql = "INSERT INTO suppliers(name,contact_person,phone,email,address) VALUES(?,?,?,?,?)";
+        try (Connection c = connect(); PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, name); p.setString(2, contact); p.setString(3, phone);
+            p.setString(4, email); p.setString(5, address); p.executeUpdate();
+        } catch (SQLException e) {
+            showDatabaseError(e);
+        }
+    }
+
+    static void addUser(String username, String password, String role, String fullName) {
+        String sql = "INSERT INTO users(username,password,role,full_name) VALUES(?,?,?,?)";
+        try (Connection c = connect(); PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, username); p.setString(2, password); p.setString(3, role);
+            p.setString(4, fullName); p.executeUpdate();
+        } catch (SQLException e) {
+            showDatabaseError(e);
+        }
+    }
+
+    static String completeSale(int medicineId, int quantity, String username) throws SQLException {
+        String select = "SELECT name,price,quantity_in_stock FROM medicines WHERE medicine_id=?";
+        String user = "SELECT user_id FROM users WHERE username=?";
+        try (Connection c = connect()) {
+            c.setAutoCommit(false);
+            try (PreparedStatement medicine = c.prepareStatement(select);
+                 PreparedStatement account = c.prepareStatement(user)) {
+                medicine.setInt(1, medicineId);
+                ResultSet row = medicine.executeQuery();
+                if (!row.next()) throw new SQLException("Medicine not found.");
+                String name = row.getString("name");
+                double price = row.getDouble("price");
+                int stock = row.getInt("quantity_in_stock");
+                if (quantity <= 0 || quantity > stock) {
+                    throw new SQLException("Only " + stock + " item(s) are available in stock.");
+                }
+
+                account.setString(1, username);
+                ResultSet userRow = account.executeQuery();
+                if (!userRow.next()) throw new SQLException("Cashier account not found.");
+                int userId = userRow.getInt("user_id");
+                double total = price * quantity;
+
+                try (PreparedStatement sale = c.prepareStatement(
+                        "INSERT INTO sales(total_amount,user_id) VALUES(?,?)", Statement.RETURN_GENERATED_KEYS);
+                     PreparedStatement item = c.prepareStatement(
+                        "INSERT INTO sale_items(sale_id,medicine_id,quantity_sold,price_at_sale) VALUES(?,?,?,?)");
+                     PreparedStatement update = c.prepareStatement(
+                        "UPDATE medicines SET quantity_in_stock=quantity_in_stock-? WHERE medicine_id=?")) {
+                    sale.setDouble(1, total); sale.setInt(2, userId); sale.executeUpdate();
+                    ResultSet keys = sale.getGeneratedKeys();
+                    keys.next();
+                    item.setInt(1, keys.getInt(1)); item.setInt(2, medicineId);
+                    item.setInt(3, quantity); item.setDouble(4, price); item.executeUpdate();
+                    update.setInt(1, quantity); update.setInt(2, medicineId); update.executeUpdate();
+                    c.commit();
+                    return String.format("SALE COMPLETE\n\nMedicine: %s\nQuantity: %d\nUnit price: R%.2f\nTotal: R%.2f",
+                            name, quantity, price, total);
+                }
+            } catch (SQLException e) {
+                c.rollback();
+                throw e;
+            } finally {
+                c.setAutoCommit(true);
+            }
+        }
+    }
+
     static void showDatabaseError(SQLException e) {
         JOptionPane.showMessageDialog(null,
             "Database connection failed.\n\n" +
@@ -198,6 +289,41 @@ public class Main {
                 styleButton(add);
                 add.addActionListener(e -> addMedicineDialog());
                 bottom.add(add);
+
+                JButton edit = new JButton("Edit Medicine");
+                styleButton(edit);
+                edit.addActionListener(e -> editMedicineDialog());
+                bottom.add(edit);
+
+                JButton delete = new JButton("Delete Medicine");
+                styleButton(delete);
+                delete.addActionListener(e -> deleteMedicine());
+                bottom.add(delete);
+
+                JButton supplier = new JButton("Add Supplier");
+                styleButton(supplier);
+                supplier.addActionListener(e -> addSupplierDialog());
+                bottom.add(supplier);
+
+                JButton user = new JButton("Add User");
+                styleButton(user);
+                user.addActionListener(e -> addUserDialog());
+                bottom.add(user);
+
+                JButton reports = new JButton("Reports");
+                styleButton(reports);
+                reports.addActionListener(e -> reportDialog());
+                bottom.add(reports);
+            } else {
+                JButton stock = new JButton("Stock Check");
+                styleButton(stock);
+                stock.addActionListener(e -> stockCheckDialog());
+                bottom.add(stock);
+
+                JButton sale = new JButton("POS / Billing");
+                styleButton(sale);
+                sale.addActionListener(e -> saleDialog(username));
+                bottom.add(sale);
             }
 
             JButton logout = new JButton("Logout");
@@ -217,6 +343,149 @@ public class Main {
         private void refresh() {
             model.setRowCount(0);
             for (Object[] row : medicines()) model.addRow(row);
+        }
+
+        private int selectedMedicineId() {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Select a medicine first.");
+                return -1;
+            }
+            return (Integer) model.getValueAt(row, 0);
+        }
+
+        private void editMedicineDialog() {
+            int id = selectedMedicineId();
+            if (id < 0) return;
+            int row = table.getSelectedRow();
+            JTextField name = new JTextField(model.getValueAt(row, 1).toString());
+            JTextField company = new JTextField(model.getValueAt(row, 2).toString());
+            JTextField type = new JTextField(model.getValueAt(row, 3).toString());
+            JTextField price = new JTextField(model.getValueAt(row, 4).toString());
+            JTextField qty = new JTextField(model.getValueAt(row, 5).toString());
+            JTextField reorder = new JTextField(model.getValueAt(row, 6).toString());
+            JTextField expiry = new JTextField(model.getValueAt(row, 7).toString());
+            JPanel panel = medicineForm(name, company, type, price, qty, reorder, expiry);
+            if (JOptionPane.showConfirmDialog(this, panel, "Edit Medicine", JOptionPane.OK_CANCEL_OPTION)
+                    == JOptionPane.OK_OPTION) {
+                try {
+                    updateMedicine(id, name.getText(), company.getText(), type.getText(),
+                        Double.parseDouble(price.getText()), Integer.parseInt(qty.getText()),
+                        Integer.parseInt(reorder.getText()), expiry.getText());
+                    refresh();
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(this, "Please enter valid medicine details.");
+                }
+            }
+        }
+
+        private void deleteMedicine() {
+            int id = selectedMedicineId();
+            if (id >= 0 && JOptionPane.showConfirmDialog(this, "Delete selected medicine?", "Confirm Delete",
+                    JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                Main.deleteMedicine(id);
+                refresh();
+            }
+        }
+
+        private JPanel medicineForm(JTextField name, JTextField company, JTextField type,
+                                     JTextField price, JTextField qty, JTextField reorder, JTextField expiry) {
+            JPanel panel = new JPanel(new GridLayout(7, 2, 6, 6));
+            panel.add(new JLabel("Medicine:")); panel.add(name);
+            panel.add(new JLabel("Company:")); panel.add(company);
+            panel.add(new JLabel("Type:")); panel.add(type);
+            panel.add(new JLabel("Price (R):")); panel.add(price);
+            panel.add(new JLabel("Quantity:")); panel.add(qty);
+            panel.add(new JLabel("Reorder level:")); panel.add(reorder);
+            panel.add(new JLabel("Expiry (YYYY-MM-DD):")); panel.add(expiry);
+            return panel;
+        }
+
+        private void stockCheckDialog() {
+            String search = JOptionPane.showInputDialog(this, "Search medicine name (leave blank for all):");
+            if (search == null) return;
+            StringBuilder result = new StringBuilder("STOCK CHECK\n\n");
+            for (Object[] medicine : medicines()) {
+                if (medicine[1].toString().toLowerCase().contains(search.toLowerCase())) {
+                    result.append(medicine[1]).append(" | Stock: ").append(medicine[5])
+                        .append(" | Price: R").append(medicine[4]).append("\n");
+                }
+            }
+            JOptionPane.showMessageDialog(this, result.toString());
+        }
+
+        private void saleDialog(String username) {
+            List<Object[]> available = medicines();
+            JComboBox<String> medicineBox = new JComboBox<>();
+            for (Object[] medicine : available) {
+                medicineBox.addItem(medicine[0] + " - " + medicine[1] + " (Stock: " + medicine[5] + ")");
+            }
+            JTextField quantity = new JTextField("1");
+            JPanel panel = new JPanel(new GridLayout(2, 2, 6, 6));
+            panel.add(new JLabel("Medicine:")); panel.add(medicineBox);
+            panel.add(new JLabel("Quantity:")); panel.add(quantity);
+            if (available.isEmpty() || JOptionPane.showConfirmDialog(this, panel, "POS / Billing",
+                    JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+            try {
+                int selected = medicineBox.getSelectedIndex();
+                String receipt = completeSale((Integer) available.get(selected)[0],
+                    Integer.parseInt(quantity.getText()), username);
+                JOptionPane.showMessageDialog(this, receipt, "Bill", JOptionPane.INFORMATION_MESSAGE);
+                refresh();
+            } catch (IllegalArgumentException | SQLException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Sale Failed", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+
+        private void addSupplierDialog() {
+            JTextField name = new JTextField();
+            JTextField contact = new JTextField();
+            JTextField phone = new JTextField();
+            JTextField email = new JTextField();
+            JTextField address = new JTextField();
+            JPanel panel = new JPanel(new GridLayout(5, 2, 6, 6));
+            panel.add(new JLabel("Name:")); panel.add(name);
+            panel.add(new JLabel("Contact person:")); panel.add(contact);
+            panel.add(new JLabel("Phone:")); panel.add(phone);
+            panel.add(new JLabel("Email:")); panel.add(email);
+            panel.add(new JLabel("Address:")); panel.add(address);
+            if (JOptionPane.showConfirmDialog(this, panel, "Add Supplier", JOptionPane.OK_CANCEL_OPTION)
+                    == JOptionPane.OK_OPTION) {
+                addSupplier(name.getText(), contact.getText(), phone.getText(), email.getText(), address.getText());
+            }
+        }
+
+        private void addUserDialog() {
+            JTextField username = new JTextField();
+            JPasswordField password = new JPasswordField();
+            JComboBox<String> role = new JComboBox<>(new String[]{"Admin", "Cashier"});
+            JTextField fullName = new JTextField();
+            JPanel panel = new JPanel(new GridLayout(4, 2, 6, 6));
+            panel.add(new JLabel("Username:")); panel.add(username);
+            panel.add(new JLabel("Password:")); panel.add(password);
+            panel.add(new JLabel("Role:")); panel.add(role);
+            panel.add(new JLabel("Full name:")); panel.add(fullName);
+            if (JOptionPane.showConfirmDialog(this, panel, "Add User", JOptionPane.OK_CANCEL_OPTION)
+                    == JOptionPane.OK_OPTION) {
+                addUser(username.getText(), new String(password.getPassword()), role.getSelectedItem().toString(), fullName.getText());
+            }
+        }
+
+        private void reportDialog() {
+            String sql = "SELECT COUNT(*) AS medicines, COALESCE(SUM(quantity_in_stock),0) AS stock, " +
+                "(SELECT COUNT(*) FROM suppliers) AS suppliers, (SELECT COUNT(*) FROM users) AS users, " +
+                "(SELECT COUNT(*) FROM sales) AS sales FROM medicines";
+            try (Connection c = connect(); Statement s = c.createStatement(); ResultSet r = s.executeQuery(sql)) {
+                if (r.next()) {
+                    JOptionPane.showMessageDialog(this,
+                        "ADMIN REPORT\n\nMedicines: " + r.getInt("medicines") +
+                        "\nItems in stock: " + r.getInt("stock") +
+                        "\nSuppliers: " + r.getInt("suppliers") +
+                        "\nUsers: " + r.getInt("users") + "\nSales: " + r.getInt("sales"));
+                }
+            } catch (SQLException e) {
+                showDatabaseError(e);
+            }
         }
 
         void addMedicineDialog() {
