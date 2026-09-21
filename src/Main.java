@@ -2,7 +2,6 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +27,8 @@ public class Main {
             p.setString(2, password);
             ResultSet r = p.executeQuery();
             if (r.next()) {
-                new Dashboard(username, r.getString("role"));
+                Dashboard dashboard = new Dashboard(username, r.getString("role"));
+                dashboard.setVisible(true);
                 return true;
             }
             JOptionPane.showMessageDialog(null, "Incorrect username or password.");
@@ -82,10 +82,15 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new Login());
+        SwingUtilities.invokeLater(() -> {
+            Login login = new Login();
+            login.setVisible(true);
+        });
     }
 
     static class Login extends JFrame {
+        private static final long serialVersionUID = 1L;
+
         Login() {
             setTitle("Richfield Pharmacy");
             setSize(430, 330);
@@ -134,17 +139,16 @@ public class Main {
             pass.addActionListener(e -> login(user.getText(), new String(pass.getPassword())));
 
             add(p);
-            setVisible(true);
         }
     }
 
     static class Dashboard extends JFrame {
+        private static final long serialVersionUID = 1L;
+
         JTable table;
         DefaultTableModel model;
-        String role;
 
         Dashboard(String username, String role) {
-            this.role = role;
             setTitle("Richfield Pharmacy - " + role);
             setSize(1050, 620);
             setLocationRelativeTo(null);
@@ -184,17 +188,17 @@ public class Main {
             styleButton(logout);
             logout.addActionListener(e -> {
                 dispose();
-                new Login();
+                Login login = new Login();
+                login.setVisible(true);
             });
             bottom.add(logout);
 
             add(top, BorderLayout.NORTH);
             add(new JScrollPane(table), BorderLayout.CENTER);
             add(bottom, BorderLayout.SOUTH);
-            setVisible(true);
         }
 
-        void refresh() {
+        private void refresh() {
             model.setRowCount(0);
             for (Object[] row : medicines()) model.addRow(row);
         }
@@ -225,7 +229,7 @@ public class Main {
                         Double.parseDouble(price.getText()), Integer.parseInt(qty.getText()),
                         Integer.parseInt(reorder.getText()), expiry.getText());
                     refresh();
-                } catch (Exception ex) {
+                } catch (IllegalArgumentException ex) {
                     JOptionPane.showMessageDialog(this, "Please enter valid medicine details.");
                 }
             }
