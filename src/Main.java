@@ -131,7 +131,7 @@ public class Main {
             p.add(passwordPanel,g);
             g.gridx=0; g.gridy++; g.gridwidth=2; p.add(login,g);
 
-            JLabel hint = new JLabel("<html><center>Admin: admin / admin123<br>Cashier: cashier / cash123</center></html>",
+                JLabel hint = new JLabel("<html><center><b>Login details</b><br>Admin: admin / admin123<br>Cashier: cashier / cash123</center></html>",
                     SwingConstants.CENTER);
             g.gridy++; p.add(hint,g);
 
