@@ -98,7 +98,7 @@ public class Main {
             setDefaultCloseOperation(EXIT_ON_CLOSE);
 
             JPanel p = new JPanel(new GridBagLayout());
-            p.setBackground(new Color(248,246,239));
+            p.setBackground(Color.WHITE);
             GridBagConstraints g = new GridBagConstraints();
             g.insets = new Insets(7, 10, 7, 10);
             g.fill = GridBagConstraints.HORIZONTAL;
@@ -131,7 +131,7 @@ public class Main {
             p.add(passwordPanel,g);
             g.gridx=0; g.gridy++; g.gridwidth=2; p.add(login,g);
 
-                JLabel hint = new JLabel("<html><center><b>Login details</b><br>Admin: admin / admin123<br>Cashier: cashier / cash123</center></html>",
+            JLabel hint = new JLabel("<html><center><b>Login details</b><br>Admin: admin / admin123<br>Cashier: cashier / cash123</center></html>",
                     SwingConstants.CENTER);
             g.gridy++; p.add(hint,g);
 
@@ -153,6 +153,7 @@ public class Main {
             setSize(1050, 620);
             setLocationRelativeTo(null);
             setDefaultCloseOperation(EXIT_ON_CLOSE);
+            getContentPane().setBackground(new Color(0, 102, 204));
 
             JPanel top = new JPanel(new BorderLayout());
             top.setBackground(new Color(0,102,204));
@@ -168,6 +169,11 @@ public class Main {
                 };
             table = new JTable(model);
             table.setRowHeight(28);
+            table.setBackground(new Color(0, 102, 204));
+            table.setForeground(Color.WHITE);
+            table.setGridColor(Color.WHITE);
+            table.getTableHeader().setBackground(new Color(0, 82, 164));
+            table.getTableHeader().setForeground(Color.WHITE);
             refresh();
 
             JButton refresh = new JButton("Refresh Stock");
@@ -175,6 +181,7 @@ public class Main {
             refresh.addActionListener(e -> refresh());
 
             JPanel bottom = new JPanel();
+            bottom.setBackground(new Color(0, 102, 204));
             bottom.add(refresh);
 
             if (role.equalsIgnoreCase("Admin")) {
