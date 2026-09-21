@@ -17,3 +17,5 @@ My Richfield Pharmacy is management system connected to a MySQL database . It al
 |---|---|---|
 | Admin | admin | admin123 |
 | Cashier | cashier | cash123 |
+## reference 
+https://www.flaticon.com/free-icon/user_9187532 
