@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 if not exist "bin" mkdir bin
-javac -cp "lib\mysql-connector-j-9.4.0.jar" -d bin src\Main.java
+javac -cp "lib\mysql-connector-j-9.4.0.jar" -d bin src\*.java
 if errorlevel 1 (
     echo Build failed.
     exit /b 1
