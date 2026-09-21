@@ -97,7 +97,7 @@ public class Main {
 
         Login() {
             setTitle("Richfield Pharmacy");
-            setSize(430, 330);
+            setSize(430, 430);
             setLocationRelativeTo(null);
             setDefaultCloseOperation(EXIT_ON_CLOSE);
 
@@ -110,6 +110,10 @@ public class Main {
             JLabel title = new JLabel("RICHFIELD PHARMACY", SwingConstants.CENTER);
             title.setFont(new Font("Arial", Font.BOLD, 24));
             title.setForeground(new Color(0,102,204));
+
+            ImageIcon userImage = new ImageIcon("assets/user.png");
+            Image scaledUserImage = userImage.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+            JLabel userIcon = new JLabel(new ImageIcon(scaledUserImage), SwingConstants.CENTER);
 
             JTextField user = new JTextField();
             JPasswordField pass = new JPasswordField();
@@ -124,7 +128,8 @@ public class Main {
             });
             styleButton(login);
 
-            g.gridx=0; g.gridy=0; g.gridwidth=2; p.add(title,g);
+            g.gridx=0; g.gridy=0; g.gridwidth=2; p.add(userIcon,g);
+            g.gridy++; p.add(title,g);
             g.gridwidth=1; g.gridy++;
             p.add(new JLabel("Username:"),g); g.gridx=1; p.add(user,g);
             g.gridx=0; g.gridy++;
