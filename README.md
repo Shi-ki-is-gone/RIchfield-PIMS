@@ -19,3 +19,7 @@ My Richfield Pharmacy is management system connected to a MySQL database . It al
 | Cashier | cashier | cash123 |
 ## reference 
 https://www.flaticon.com/free-icon/user_9187532 
+
+*Copilot used to split project and fix errors*
+https://github.com/features/copilot
+https://dev.mysql.com/downloads/
