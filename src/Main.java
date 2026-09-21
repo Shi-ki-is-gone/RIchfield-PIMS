@@ -7,8 +7,8 @@ import java.util.List;
 
 public class Main {
     static final String DB_URL = "jdbc:mysql://localhost:3306/healthfirst_pims?useSSL=false&serverTimezone=Africa/Johannesburg";
-    static final String DB_USER = "root";
-    static final String DB_PASSWORD = "root";
+    static final String DB_USER = "Kyle";
+    static final String DB_PASSWORD = "402306600Richield.ac.za";
 
     static Connection connect() throws SQLException {
         try {
