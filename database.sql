@@ -61,8 +61,8 @@ VALUES
 ('HealthMed Wholesale','Sipho Ndlovu','031 555 0303','sales@healthmed.co.za','Durban, KwaZulu-Natal');
 
 INSERT INTO medicines(name,company,medicine_type,price,quantity_in_stock,reorder_level,expiry_date,supplier_id)
-SELECT 'Paracetamol 500mg','HealthMed','Tablet',25.00,100,20,'2027-12-31',supplier_id FROM suppliers WHERE name='MediSupply SA' LIMIT 1;
+SELECT 'Ibuprofen 200mg','HealthMed','Tablet',32.50,100,20,'2027-12-31',supplier_id FROM suppliers WHERE name='MediSupply SA' LIMIT 1;
 INSERT INTO medicines(name,company,medicine_type,price,quantity_in_stock,reorder_level,expiry_date,supplier_id)
 SELECT 'Amoxicillin 500mg','PharmaCare','Capsule',65.00,50,10,'2027-10-31',supplier_id FROM suppliers WHERE name='Pharma Distributors' LIMIT 1;
 INSERT INTO medicines(name,company,medicine_type,price,quantity_in_stock,reorder_level,expiry_date,supplier_id)
-SELECT 'Cough Syrup 100ml','HealthMed','Syrup',48.50,35,8,'2027-08-30',supplier_id FROM suppliers WHERE name='HealthMed Wholesale' LIMIT 1;
+SELECT 'Omeprazole 20mg','HealthMed','Capsule',45.00,35,8,'2027-08-30',supplier_id FROM suppliers WHERE name='HealthMed Wholesale' LIMIT 1;
