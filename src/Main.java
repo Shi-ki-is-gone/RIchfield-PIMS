@@ -108,7 +108,7 @@ public class Main {
             g.fill = GridBagConstraints.HORIZONTAL;
 
             JLabel title = new JLabel("RICHFIELD PHARMACY", SwingConstants.CENTER);
-            title.setFont(new Font("Arial", Font.BOLD, 24));
+            title.setFont(new Font("Arial", Font.BOLD, 30));
             title.setForeground(new Color(0,102,204));
 
             ImageIcon userImage = new ImageIcon("assets/user.png");
@@ -128,8 +128,8 @@ public class Main {
             });
             styleButton(login);
 
-            g.gridx=0; g.gridy=0; g.gridwidth=2; p.add(userIcon,g);
-            g.gridy++; p.add(title,g);
+            g.gridx=0; g.gridy=0; g.gridwidth=2; p.add(title,g);
+            g.gridy++; p.add(userIcon,g);
             g.gridwidth=1; g.gridy++;
             p.add(new JLabel("Username:"),g); g.gridx=1; p.add(user,g);
             g.gridx=0; g.gridy++;
