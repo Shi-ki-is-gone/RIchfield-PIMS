@@ -20,10 +20,10 @@ My Richfield Pharmacy is management system connected to a MySQL database . It al
 ## reference 
 https://www.flaticon.com/free-icon/user_9187532 
 
-*Copilot used to split project and fix errors*
+*Copilot used to split project and fix errors:*
 
 https://github.com/features/copilot
 
-MySQL used
+MySQL used:
 
 https://dev.mysql.com/downloads/
