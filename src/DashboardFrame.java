@@ -22,13 +22,11 @@ import java.util.List;
 public class DashboardFrame extends JFrame {
     private static final long serialVersionUID = 1L;
     private final String username;
-    private final String role;
     private final DefaultTableModel model;
     private final JTable table;
 
     DashboardFrame(String username, String role) {
         this.username = username;
-        this.role = role;
         setTitle("Richfield Pharmacy - " + role);
         setSize(1050, 620);
         setLocationRelativeTo(null);
@@ -84,7 +82,7 @@ public class DashboardFrame extends JFrame {
 
     private void refresh() {
         model.setRowCount(0);
-        for (Object[] row : MedicineRepository.medicines()) model.addRow(row);
+        for (Object[] row : MedicineStorage.medicines()) model.addRow(row);
     }
 
     private int selectedMedicineId() {
@@ -106,7 +104,7 @@ public class DashboardFrame extends JFrame {
         JTextField expiry = new JTextField("2027-12-31");
         if (showMedicineForm("Add Medicine", name, company, type, price, quantity, reorder, expiry)) {
             try {
-                MedicineRepository.addMedicine(name.getText(), company.getText(), type.getText(), Double.parseDouble(price.getText()), Integer.parseInt(quantity.getText()), Integer.parseInt(reorder.getText()), expiry.getText());
+                MedicineStorage.addMedicine(name.getText(), company.getText(), type.getText(), Double.parseDouble(price.getText()), Integer.parseInt(quantity.getText()), Integer.parseInt(reorder.getText()), expiry.getText());
                 refresh();
             } catch (IllegalArgumentException e) { showInvalidDetails(); }
         }
@@ -125,7 +123,7 @@ public class DashboardFrame extends JFrame {
         JTextField expiry = new JTextField(model.getValueAt(row, 7).toString());
         if (showMedicineForm("Edit Medicine", name, company, type, price, quantity, reorder, expiry)) {
             try {
-                MedicineRepository.updateMedicine(id, name.getText(), company.getText(), type.getText(), Double.parseDouble(price.getText()), Integer.parseInt(quantity.getText()), Integer.parseInt(reorder.getText()), expiry.getText());
+                MedicineStorage.updateMedicine(id, name.getText(), company.getText(), type.getText(), Double.parseDouble(price.getText()), Integer.parseInt(quantity.getText()), Integer.parseInt(reorder.getText()), expiry.getText());
                 refresh();
             } catch (IllegalArgumentException e) { showInvalidDetails(); }
         }
@@ -144,7 +142,7 @@ public class DashboardFrame extends JFrame {
     private void deleteMedicine() {
         int id = selectedMedicineId();
         if (id >= 0 && JOptionPane.showConfirmDialog(this, "Delete selected medicine?", "Confirm Delete", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            MedicineRepository.deleteMedicine(id);
+            MedicineStorage.deleteMedicine(id);
             refresh();
         }
     }
@@ -153,7 +151,7 @@ public class DashboardFrame extends JFrame {
         String search = JOptionPane.showInputDialog(this, "Search medicine name (leave blank for all):");
         if (search == null) return;
         StringBuilder result = new StringBuilder("STOCK CHECK\n\n");
-        for (Object[] medicine : MedicineRepository.medicines()) {
+        for (Object[] medicine : MedicineStorage.medicines()) {
             if (medicine[1].toString().toLowerCase().contains(search.toLowerCase())) {
                 result.append(medicine[1]).append(" | Stock: ").append(medicine[5]).append(" | Price: R").append(medicine[4]).append("\n");
             }
@@ -162,7 +160,7 @@ public class DashboardFrame extends JFrame {
     }
 
     private void saleDialog() {
-        List<Object[]> medicines = MedicineRepository.medicines();
+        List<Object[]> medicines = MedicineStorage.medicines();
         JComboBox<String> choices = new JComboBox<>();
         for (Object[] medicine : medicines) choices.addItem(medicine[0] + " - " + medicine[1] + " (Stock: " + medicine[5] + ")");
         JTextField quantity = new JTextField("1");
@@ -170,7 +168,7 @@ public class DashboardFrame extends JFrame {
         addField(panel, "Medicine:", choices); addField(panel, "Quantity:", quantity);
         if (medicines.isEmpty() || JOptionPane.showConfirmDialog(this, panel, "POS / Billing", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         try {
-            String bill = MedicineRepository.completeSale((Integer) medicines.get(choices.getSelectedIndex())[0], Integer.parseInt(quantity.getText()), username);
+            String bill = MedicineStorage.completeSale((Integer) medicines.get(choices.getSelectedIndex())[0], Integer.parseInt(quantity.getText()), username);
             JOptionPane.showMessageDialog(this, bill, "Bill", JOptionPane.INFORMATION_MESSAGE);
             refresh();
         } catch (IllegalArgumentException | SQLException e) {
@@ -182,14 +180,14 @@ public class DashboardFrame extends JFrame {
         JTextField name = new JTextField(); JTextField contact = new JTextField(); JTextField phone = new JTextField(); JTextField email = new JTextField(); JTextField address = new JTextField();
         JPanel panel = new JPanel(new GridLayout(5, 2, 6, 6));
         addField(panel, "Name:", name); addField(panel, "Contact person:", contact); addField(panel, "Phone:", phone); addField(panel, "Email:", email); addField(panel, "Address:", address);
-        if (JOptionPane.showConfirmDialog(this, panel, "Add Supplier", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) MedicineRepository.addSupplier(name.getText(), contact.getText(), phone.getText(), email.getText(), address.getText());
+        if (JOptionPane.showConfirmDialog(this, panel, "Add Supplier", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) MedicineStorage.addSupplier(name.getText(), contact.getText(), phone.getText(), email.getText(), address.getText());
     }
 
     private void addUserDialog() {
         JTextField user = new JTextField(); JPasswordField password = new JPasswordField(); JComboBox<String> roleBox = new JComboBox<>(new String[]{"Admin", "Cashier"}); JTextField fullName = new JTextField();
         JPanel panel = new JPanel(new GridLayout(4, 2, 6, 6));
         addField(panel, "Username:", user); addField(panel, "Password:", password); addField(panel, "Role:", roleBox); addField(panel, "Full name:", fullName);
-        if (JOptionPane.showConfirmDialog(this, panel, "Add User", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) MedicineRepository.addUser(user.getText(), new String(password.getPassword()), roleBox.getSelectedItem().toString(), fullName.getText());
+        if (JOptionPane.showConfirmDialog(this, panel, "Add User", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) MedicineStorage.addUser(user.getText(), new String(password.getPassword()), roleBox.getSelectedItem().toString(), fullName.getText());
     }
 
     private void reportDialog() {

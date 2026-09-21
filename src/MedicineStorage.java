@@ -7,8 +7,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class MedicineRepository {
-    private MedicineRepository() {
+public final class MedicineStorage {
+    private MedicineStorage() {
     }
 
     static List<Object[]> medicines() {
